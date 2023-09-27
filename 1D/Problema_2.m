@@ -4,11 +4,19 @@
 % Presenta: Luis Edwin Aguilar Anzures
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Descripcion: Dada f calculamos el error en L^2 y H^1 y sus respectivas
-% tasas de decrecimiento para divisiones de 10, 20, 40, 80 y 160 subtintervalo de D para
+% tasas de decrecimiento para divisiones de 10, 20, 40, 80 y 160 subtintervalo de D. Para
 % esto  contruimos el vector solución finita u_h al sistema
-% Au=b en cada iteración
+% Au=b en cada iteración, donde $A$ es ma matriz de los termanos de
+% difusión, reacción y convección y b es el vector con la información del término fuente f 
 %Ouput: tabla de erroren L^2 y H^1 y sus tasas de decrecimiento 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%El programa hace una iteración para cada una de la divisiones de
+%intervalos:10, 20, 40, 80 y 160
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Parametros de Usuario
 %interval endpoints of [a,b]
 a=0;
@@ -49,21 +57,35 @@ for i=1:nI_approx
     b_global(i)= b_global(i)+b_local(1); %suma las respectivas contribuciones
     b_global(i+1)= b_global(i+1)+b_local(2);
 end
-b_global(1)=0; %condiciones de frontera en a
-b_global(nI_approx+1)=0; %condiciones de frontera en b
+b_global(1)=1; %condiciones de frontera en a
+%b_global(nI_approx+1)=0; %condiciones de frontera en b
 
 
 %%%%%%%%%%%%%%%%%%% CONTRUIMOS LA MATRIZ A  %%%%%%%%%%%%%%%%%%%
+%la matriz corresponde a la forma bilienal 
+%A(v,w)=int v'w' + int v'w + int vw
+
 A_global=zeros(nI_approx+1,nI_approx+1); %es la matriz A
+A_local=zeros(2,2);
+
+ phi_nn_f=@phi_nn; %calcula la integral de A(phi^-_i,phi^-_i) en (1,i+1)
+ phi_np_f=@phi_np;%calcula la integral de  A(phi^-_i,phi^+_{i+1}) en (1,i+1)
+ phi_pn_f=@phi_pn;%calcula la integral de  A(phi^+_{i+1},phi^-_i) en (1,i+1)
+ phi_pp_f=@phi_pp;%calcula la integral de  en A(phi^+_{i+1},phi^+_{i+1}) en (1,i+1)
 for i=1:nI_approx
-    A_global(i,i)= 2*nI_approx; % es la integral de (phi_i)^2 en D
-    A_global(i,i+1)=-1 * nI_approx; % es la integral de (phi_i)(phi_{i+1}) en D
-    A_global(i+1,i)=A_global(i,i+1);% la forma bilienar es simétrica
+     A_local(1,1)=phi_nn_f(nodes,i); %almacenamos las contribuciuones de las integrales
+     A_local(2,2)=phi_pp_f(nodes,i);
+     A_local(1,2)=phi_np_f(nodes,i);
+     A_local(2,1)=phi_pn_f(nodes,i);
+%sumanos las contribuciones
+    A_global(i,i)= A_global(i,i)+ A_local(1,1); 
+    A_global(i+1,i+1)= A_global(i+1,i+1)+A_local(2,2);
+    A_global(i,i+1)=A_local(2,1); 
+    A_global(i+1,i)=A_local(1,2);
 end
-A_global(1,:)=0; %condicones de frontera en a
+A_global(1,:)=0; %condicones de frontera de Drichlet en a
 A_global(1,1)=1;
-A_global(nI_approx+1,:)=0; %condicones de frontera en b
-A_global(nI_approx+1,nI_approx+1)=1;
+
 
 %%%%%%%%%%%%%%%%%%% RESOLVEMOS PARA U %%%%%%%%%%%%%%%%%%%%%
 dofs=linsolve(A_global,b_global); %obtenemos el vector u_h de grados de libertad solu del sistema A|u_h=b
@@ -108,21 +130,34 @@ for i=2:n_cicles
     H1err_rate(i)=log(H1_error_vec(i)./H1_error_vec(i-1))./log(1/2);
 end
 
+%renombramos lo títulos de la tabla: 
+N_vec=nI_approx_vec';
+error_L2=L2_error_vec';
+radio_de_error_L2= err_rate';
+error_H1=H1_error_vec';
+radio_de_error_H1= H1err_rate';
 
-output_table=[nI_approx_vec' L2_error_vec' err_rate' H1_error_vec' H1err_rate'] ; % Crea tabla con vectores columna
-% %Ver Gilat-Matlab seccion 4.3 para el comando <disp>
-disp("Tabla: nI_vec' L2_err_norm' L2_err_rate'H1_err_norm' H1_err_rate'"); %Imprime en la terminal                                                 
+
+output_table=table(N_vec,error_L2,radio_de_error_L2,error_H1,radio_de_error_H1) ; % Crea tabla con vectores columna                                           
 disp(output_table);%Imprime en la terminal
+
 
 %%%%%%%%%%%%%% FUNCIONES %%%%%%%%%%%%%%%%%
 
+%el término fuente
+function [val] = f_in(x)
+    val = 2*(1-x)*exp(x); 
+      val = val - 2*exp(x) ; 
+       val = val+ ((1-x)^2)*exp(x); 
+end
+
 %la sol teórica 
 function [val] = u_exact(x)
-    val = sin(4*pi*x); 
+    val = (1-x)^2 * exp(x) ; 
 end
 %la derivada de la sol teórica
 function [val] = du_exact(x)
-    val = 4*pi*cos(4*pi*x); 
+    val = (1-x)^2*exp(x) - 2*(1-x)*exp(x); 
 end
 
 % Function:phi_m
@@ -130,31 +165,164 @@ end
 %       i      : el índice de la hat_función  del a izquierda
 % Descripcion:
 %       Evalua la integral (\phi^-_i)f  en el intervalo  (nodes(i),nodes(i+1))
-%       evaluandoi su exporesión directa.
+%      usando la regla de(l) Simpson 
 function [val] = phi_m(nodes,i)
-            x1 =nodes(i);
+            x0 =nodes(i);
             x2 =nodes(i+1);
-            val=4 * pi * (x1-x2)* cos(4*pi*x1);
-            val=val - sin(4*pi*x1);
-            val=val + sin(4*pi*x2);
-            val=(1./(x1-x2)) .* val;
+             h=0.5*(x2-x0);
+            x1 = x0+h;
+            val= f_in(x0)*(x0-x2)/(x0-x2);
+            val= val +4*f_in(x1)*(x1-x2)/(x0-x2);
+            val= val + f_in(x2)*(x2-x2)/(x0-x2);
+            val = h/3.*val;
 end
 
 % Function:phi_p
 %       nodes:  los nodos de la particion [a,b]
 %       i      : el índice de la hat_función  del a izquierda
 % Descripcion:
-%       Evalua la integral (\phi^-_i)f  en el intervalo  (nodes(i),nodes(i+1))
-%       evaluandoi su exporesión directa.
+%       Evalua la integral (\phi^+_{i+1})f  en el intervalo  (nodes(i),nodes(i+1))
+%       usando la regla de(l) Simpson
 function [val] = phi_p(nodes,i)
-            x1 =nodes(i);
+            x0 =nodes(i);
             x2 =nodes(i+1);
-            val= sin(4*pi*x1) ;
-            val=val - 4 * pi * (x1-x2)* cos(4*pi*x2) ;
-            val=val - sin(4*pi*x2);
-            val=(1./(x1-x2)) .* val;
+            h=0.5*(x2-x0);
+            x1 = x0+h;
+            val= f_in(x0)*(x0-x0)/(x2-x0);
+            val= val +4* f_in(x1)*(x1-x0)/(x2-x0);
+            val= val + f_in(x2)*(x2-x0)/(x2-x0);
+            val = h/3.*val;
 end
 
+
+%%%% el siguiente grupo de funciones es para calcular las integrales en la
+%%%% matriz asociada a la forma bilineal en el intervalo [x_i,x_{i+1}].
+
+
+function [val] = phi_n(x,nodes,i)
+
+        eps=1e-6; %Tolerancia
+        %Checamos si x esta en el intervalo donde hat_i(x) es cero
+        if((x+eps<nodes(i)) || (x-eps > nodes(i+1))) % Ver Gilat sec. 6.1 & 6.2
+           disp("Error: x is not defined in hat_functions_pair ") ;%Gilat sec 4.3.1
+           assert(false); %Stops program
+        end
+       val= (1- (x- nodes(i))/(nodes(i+1)-nodes(i)));
+       
+end
+function [val] = phi_P(x,nodes, i)
+
+        eps=1e-6; %Tolerancia
+        %Checamos si x esta en el intervalo donde hat_i(x) es cero
+        if((x+eps<nodes(i)) || (x-eps > nodes(i+1))) % Ver Gilat sec. 6.1 & 6.2
+           disp("Error: x is not defined in hat_functions_pair ") ;%Gilat sec 4.3.1
+           assert(false); %Stops program
+        end
+       
+       val=(x-nodes(i))/(nodes(i+1)-nodes(i));    
+end
+
+function [val] = dphi_n(x,nodes,i)
+
+        eps=1e-6; %Tolerancia
+        %Checamos si x esta en el intervalo donde hat_i(x) es cero
+        if((x+eps<nodes(i)) || (x-eps > nodes(i+1))) % Ver Gilat sec. 6.1 & 6.2
+           disp("Error: x is not defined in hat_functions_pair ") ;%Gilat sec 4.3.1
+           assert(false); %Stops program
+        end
+ 
+      val= (1/(nodes(i)-nodes(i+1)));
+       
+end
+function [val] = dphi_P(x,nodes,i)
+        eps=1e-6; %Tolerancia
+        %Checamos si x esta en el intervalo donde hat_i(x) es cero
+        if((x+eps<nodes(i)) || (x-eps > nodes(i+1))) % Ver Gilat sec. 6.1 & 6.2
+           disp("Error: x is not defined in hat_functions_pair ") ;%Gilat sec 4.3.1
+           assert(false); %Stops program
+        end
+ 
+      val = (1/(nodes(i+1)-nodes(i)));
+    
+end
+
+% Function:phi_nn
+%       nodes:  los nodos de la particion [a,b]
+%       i      : el índice de la hat_función  del a izquierda
+% Descripcion:
+%       alcula la integral asociada a  A(phi^-_i,phi^-_i) en el intervalo (1,i+1)
+%      usando la regla de(l) Simpson 
+function [val] = phi_nn(nodes,i)
+            x0 =nodes(i);
+            x2 =nodes(i+1);
+            h=0.5*(x2-x0);
+            x1 = x0+h;
+
+            %val= 1/((x0-x2)^2)+(1/(x0-x2))*((x0-x2)/(x0-x2))+ ((x0-x2)/(x0-x2))*((x0-x2)/(x0-x2));
+            %val=val+ 4/((x0-x2)^2)+(4/(x0-x2))*((x1-x2)/(x0-x2))+ (4*(x1-x2)/(x0-x2))*((x1-x2)/(x0-x2));
+            %val=val+ 1/((x0-x2)^2)+(1/(x0-x2))*((x2-x2)/(x0-x2))+ ((x2-x2)/(x0-x2))*((x2-x2)/(x0-x2));
+            val= dphi_n(x0,nodes,i)*dphi_n(x0,nodes,i) + dphi_n(x0,nodes,i)*phi_n(x0,nodes,i)+ phi_n(x0,nodes,i)*phi_n(x0,nodes,i);
+            val= val+4*dphi_n(x1,nodes,i)*dphi_n(x1,nodes,i) + 4*dphi_n(x1,nodes,i)*phi_n(x1,nodes,i)+ 4*phi_n(x1,nodes,i)*phi_n(x1,nodes,i);
+            val= val+ dphi_n(x2,nodes,i)*dphi_n(x2,nodes,i) + dphi_n(x2,nodes,i)*phi_n(x2,nodes,i)+ phi_n(x2,nodes,i)*phi_n(x2,nodes,i);
+            val = h/3.*val;
+end
+
+% Function:phi_np
+%       nodes:  los nodos de la particion [a,b]
+%       i      : el índice de la hat_función  del a izquierda
+% Descripcion:
+%       alcula la integral asociada a   A(phi^-_i,phi^+_{i+1})  en el intervalo (1,i+1)
+%      usando la regla de(l) Simpson 
+function [val] = phi_np(nodes,i)
+            x0 =nodes(i);
+            x2 =nodes(i+1);
+            h=0.5*(x2-x0);
+            x1 = x0+h;
+             val= dphi_n(x0,nodes,i)*dphi_P(x0,nodes,i) + dphi_n(x0,nodes,i)*phi_P(x0,nodes,i)+ phi_n(x0,nodes,i)*phi_P(x0,nodes,i);
+            val= val+4*dphi_n(x1,nodes,i)*dphi_P(x1,nodes,i) + 4*dphi_n(x1,nodes,i)*phi_P(x1,nodes,i)+ 4*phi_n(x1,nodes,i)*phi_P(x1,nodes,i);
+            val= val+ dphi_n(x2,nodes,i)*dphi_P(x2,nodes,i) + dphi_n(x2,nodes,i)*phi_P(x2,nodes,i)+ phi_n(x2,nodes,i)*phi_P(x2,nodes,i);
+            
+            val = h/3.*val;
+end
+
+% Function:phi_pn
+%       nodes:  los nodos de la particion [a,b]
+%       i      : el índice de la hat_función  del a izquierda
+% Descripcion:
+%       alcula la integral asociada a   A(phi^+_{i+1},phi^-_i)  en el intervalo (1,i+1)
+%      usando la regla de(l) Simpson 
+function [val] = phi_pn(nodes,i)
+            x0 =nodes(i);
+            x2 =nodes(i+1);
+             h=0.5*(x2-x0);
+            x1 = x0+h;
+val= dphi_P(x0,nodes,i)*dphi_n(x0,nodes,i) + dphi_P(x0,nodes,i)*phi_n(x0,nodes,i)+ phi_P(x0,nodes,i)*phi_n(x0,nodes,i);
+            val= val+4*dphi_P(x1,nodes,i)*dphi_n(x1,nodes,i) + 4*dphi_P(x1,nodes,i)*phi_n(x1,nodes,i)+ 4*phi_P(x1,nodes,i)*phi_n(x1,nodes,i);
+            val= val+ dphi_P(x2,nodes,i)*dphi_n(x2,nodes,i) + dphi_P(x2,nodes,i)*phi_n(x2,nodes,i)+ phi_P(x2,nodes,i)*phi_n(x2,nodes,i);
+            
+            val = h/3.*val;
+end
+
+% Function:phi_pp
+%       nodes:  los nodos de la particion [a,b]
+%       i      : el índice de la hat_función  del a izquierda
+% Descripcion:
+%       calcula la integral asociada a A(phi^+_{i+1},phi^+_{i+1})  en el intervalo (1,i+1)
+%      usando la regla de(l) Simpson 
+function [val] = phi_pp(nodes,i)
+            x0 =nodes(i);
+            x2 =nodes(i+1);
+             h=0.5*(x2-x0);
+            x1 = x0+h;
+val= dphi_P(x0,nodes,i)*dphi_P(x0,nodes,i) + dphi_P(x0,nodes,i)*phi_P(x0,nodes,i)+ phi_P(x0,nodes,i)*phi_P(x0,nodes,i);
+            val= val+4*dphi_P(x1,nodes,i)*dphi_P(x1,nodes,i) + 4*dphi_P(x1,nodes,i)*phi_P(x1,nodes,i)+ 4*phi_P(x1,nodes,i)*phi_P(x1,nodes,i);
+            val= val+ dphi_P(x2,nodes,i)*dphi_P(x2,nodes,i) + dphi_P(x2,nodes,i)*phi_P(x2,nodes,i)+ phi_P(x2,nodes,i)*phi_P(x2,nodes,i);
+            
+            val = h/3.*val;
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Functio: eval_hat_function_pair
 % Input: 
