@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Curso de Teoría y Práctica Elementos Finitos
-% Posgrado en Matematicas-UNAM-CdMx
+
 % Presenta: Luis Edwin Aguilar Anzures
 % email: eda.math10@gmail.com
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
