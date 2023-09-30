@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% eoría y Práctica Elementos Finitos
+% Teoría y Práctica Elementos Finitos
 % Posgrado en Matematicas-UNAM-CdMx
 % Presenta: Luis Edwin Aguilar Anzures
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
