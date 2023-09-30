@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Curso de Teoría y Práctica Elementos Finitos
+% Teoría y Práctica Elementos Finitos
 % Presenta: Luis Edwin Aguilar Anzures
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Descripcion: Dada f calculamos el error en L^2 y H^1 y sus respectivas
