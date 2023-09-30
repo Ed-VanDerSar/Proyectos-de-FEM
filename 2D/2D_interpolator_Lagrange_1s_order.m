@@ -1,6 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Curso de Teoría y Práctica Elementos Finitos
-
+% Teoría y Práctica Elementos Finitos
 % Presenta: Luis Edwin Aguilar Anzures
 % email: eda.math10@gmail.com
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
