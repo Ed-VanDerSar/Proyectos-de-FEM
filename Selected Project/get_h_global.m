@@ -1,13 +1,9 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Curso de Teoría y Práctica Elementos Finitos
-% Posgrado en Matematicas-UNAM-CdMx
-% Prof. Daniel Castañon Quiroz. daniel.castanon@iimas.unam.mx
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [h_global] = get_h_global(msh)
 % get_h_global: regresa la h global de la malla
 % Input: estructura msh 
 % Output: h_global
+
+
+function [h_global] = get_h_global(msh)
 
 % guardamos/renombramos variables importantes
 
