@@ -1,8 +1,4 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Curso de Teoría y Práctica Elementos Finitos
-% Posgrado en Matematicas-UNAM-CdMx
-% Prof. Daniel Castañon Quiroz. daniel.castanon@iimas.unam.mx
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 function [mesh] = read_mesh(mesh_filename)
 % get_faces:
